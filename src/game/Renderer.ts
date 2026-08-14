@@ -1,13 +1,14 @@
 import { TileType, Direction, TankKind, PowerUpType } from './types';
 import {
   TILE_SIZE, MAP_COLS, MAP_ROWS, PLAYFIELD_W, PLAYFIELD_H,
-  SIDEBAR_W, TANK_SIZE,
+  SIDEBAR_W, TANK_SIZE, BULLET_SIZE,
 } from './constants';
 import { Tank } from './Tank';
 import { PlayerTank } from './PlayerTank';
 import { EnemyTank } from './EnemyTank';
 import { Bullet } from './Bullet';
 import { PowerUp } from './PowerUp';
+import { Explosion } from './Explosion';
 
 export type LayoutMode = 'desktop' | 'mobile';
 
@@ -263,10 +264,37 @@ export class Renderer {
   drawBullet(b: Bullet) {
     const { x: ox, y: oy } = this.playfieldOffset;
     const ctx = this.ctx;
+    const half = BULLET_SIZE / 2;
     ctx.fillStyle = b.ownerIsPlayer ? '#fff' : '#ffd700';
-    ctx.fillRect(b.x + ox - 3, b.y + oy - 3, 6, 6);
+    ctx.fillRect(b.x + ox - half, b.y + oy - half, BULLET_SIZE, BULLET_SIZE);
     ctx.fillStyle = '#ff4500';
     ctx.fillRect(b.x + ox - 1, b.y + oy - 1, 2, 2);
+  }
+
+  drawExplosion(e: Explosion) {
+    const { x: ox, y: oy } = this.playfieldOffset;
+    const ctx = this.ctx;
+    const cx = e.x + ox;
+    const cy = e.y + oy;
+    const r = e.radius;
+    ctx.save();
+    ctx.globalAlpha = e.alpha;
+    // 外层火焰
+    ctx.fillStyle = '#ff4500';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    // 中层
+    ctx.fillStyle = '#ffa500';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    // 核心
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   drawPowerUp(p: PowerUp) {
@@ -293,16 +321,16 @@ export class Renderer {
     ctx.fillText(icons[p.type] || '?', x + s / 2, y + s / 2);
   }
 
-  drawSidebar(score: number, lives: number, level: number, enemiesLeft: number) {
+  drawSidebar(score: number, lives: number, level: number, enemiesLeft: number, muted: boolean = false) {
     const ctx = this.ctx;
     if (this.layout === 'mobile') {
-      this.drawMobileSidebar(score, lives, level, enemiesLeft);
+      this.drawMobileSidebar(score, lives, level, enemiesLeft, muted);
     } else {
-      this.drawDesktopSidebar(score, lives, level, enemiesLeft);
+      this.drawDesktopSidebar(score, lives, level, enemiesLeft, muted);
     }
   }
 
-  private drawDesktopSidebar(score: number, lives: number, level: number, enemiesLeft: number) {
+  private drawDesktopSidebar(score: number, lives: number, level: number, enemiesLeft: number, muted: boolean) {
     const ctx = this.ctx;
     const x0 = PLAYFIELD_W;
     ctx.fillStyle = '#1a1a1a';
@@ -317,17 +345,22 @@ export class Renderer {
     ctx.font = '12px monospace';
     ctx.fillText('BATTLE CITY', x0 + 12, 32);
 
+    // 静音状态
+    ctx.fillStyle = muted ? '#ff4444' : '#4caf50';
+    ctx.font = '12px monospace';
+    ctx.fillText(muted ? '🔇 已静音 (M)' : '🔊 声音开 (M)', x0 + 12, 50);
+
     ctx.fillStyle = '#fff';
     ctx.font = '14px monospace';
-    ctx.fillText(`分数: ${score}`, x0 + 12, 60);
-    ctx.fillText(`生命: ${lives}`, x0 + 12, 84);
-    ctx.fillText(`关卡: ${level + 1}`, x0 + 12, 108);
+    ctx.fillText(`分数: ${score}`, x0 + 12, 72);
+    ctx.fillText(`生命: ${lives}`, x0 + 12, 96);
+    ctx.fillText(`关卡: ${level + 1}`, x0 + 12, 120);
 
-    ctx.fillText(`剩余敌人:`, x0 + 12, 132);
+    ctx.fillText(`剩余敌人:`, x0 + 12, 144);
     const cols = 5;
     for (let i = 0; i < enemiesLeft; i++) {
       const cx = x0 + 12 + (i % cols) * 16;
-      const cy = 152 + Math.floor(i / cols) * 16;
+      const cy = 164 + Math.floor(i / cols) * 16;
       ctx.fillStyle = '#888';
       ctx.fillRect(cx, cy, 12, 12);
     }
@@ -339,10 +372,11 @@ export class Renderer {
     ctx.fillText('WASD 移动', x0 + 12, helpY + 18);
     ctx.fillText('J 射击', x0 + 12, helpY + 34);
     ctx.fillText('P 暂停', x0 + 12, helpY + 50);
-    ctx.fillText('手柄: 十字键+A/X', x0 + 12, helpY + 66);
+    ctx.fillText('M 静音', x0 + 12, helpY + 66);
+    ctx.fillText('手柄: 十字键+A/X', x0 + 12, helpY + 82);
   }
 
-  private drawMobileSidebar(score: number, lives: number, level: number, enemiesLeft: number) {
+  private drawMobileSidebar(score: number, lives: number, level: number, enemiesLeft: number, muted: boolean) {
     const ctx = this.ctx;
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, this.canvasW, this.sidebarH);
@@ -351,7 +385,7 @@ export class Renderer {
     ctx.font = 'bold 14px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`分数 ${score}`, 10, this.sidebarH / 2);
+    ctx.fillText(`${muted ? '🔇' : '🔊'} ${score}`, 10, this.sidebarH / 2);
     ctx.textAlign = 'center';
     ctx.fillText(`♥${lives}`, this.canvasW / 2, this.sidebarH / 2);
     ctx.textAlign = 'right';
@@ -423,7 +457,7 @@ export class Renderer {
     // 操作提示
     ctx.fillStyle = '#666';
     ctx.font = '12px monospace';
-    ctx.fillText('键盘: WASD移动 J射击 P暂停', cx, this.canvasH - 30);
+    ctx.fillText('WASD移动  J/空格射击  P暂停  M静音', cx, this.canvasH - 30);
   }
 
   private drawButton(x: number, y: number, w: number, h: number, text: string, color: string) {

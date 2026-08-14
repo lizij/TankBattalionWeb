@@ -1,31 +1,31 @@
 // 游戏常量
 
-export const TILE_SIZE = 32;          // 每个格子像素大小
+export const TILE_SIZE = 16;          // 每个格子像素大小
 export const MAP_COLS = 13;           // 地图列数
 export const MAP_ROWS = 13;           // 地图行数
-export const PLAYFIELD_W = TILE_SIZE * MAP_COLS; // 416
-export const PLAYFIELD_H = TILE_SIZE * MAP_ROWS; // 416
+export const PLAYFIELD_W = TILE_SIZE * MAP_COLS; // 208
+export const PLAYFIELD_H = TILE_SIZE * MAP_ROWS; // 208
 
 export const SIDEBAR_W = 160;         // 右侧信息栏宽度
 export const CANVAS_W = PLAYFIELD_W + SIDEBAR_W;
 export const CANVAS_H = PLAYFIELD_H;
 
-// 坦克尺寸（占 2x2 格 = 64x64）
+// 坦克尺寸（占 2x2 格 = 32x32）
 export const TANK_SIZE = TILE_SIZE * 2;
 
 // 坦克速度（像素/帧）
-export const PLAYER_SPEED = 2;
-export const ENEMY_SPEED_LIGHT = 1.5;
-export const ENEMY_SPEED_ARMORED = 2.5;
-export const ENEMY_SPEED_RAPID = 1.5;
-export const ENEMY_SPEED_HEAVY = 1;
+export const PLAYER_SPEED = 1;
+export const ENEMY_SPEED_LIGHT = 0.75;
+export const ENEMY_SPEED_ARMORED = 1.25;
+export const ENEMY_SPEED_RAPID = 0.75;
+export const ENEMY_SPEED_HEAVY = 0.5;
 
 // 子弹速度
-export const BULLET_SPEED = 5;
-export const BULLET_SPEED_RAPID = 6;
+export const BULLET_SPEED = 3;
+export const BULLET_SPEED_RAPID = 4;
 
 // 子弹尺寸
-export const BULLET_SIZE = 6;
+export const BULLET_SIZE = 4;
 
 // 每关敌人数
 export const ENEMIES_PER_LEVEL = 20;

@@ -13,9 +13,11 @@ import { PlayerTank } from './PlayerTank';
 import { EnemyTank } from './EnemyTank';
 import { Bullet } from './Bullet';
 import { PowerUp } from './PowerUp';
+import { Explosion } from './Explosion';
 import { InputManager } from './InputManager';
 import { Renderer, LayoutMode } from './Renderer';
 import { Leaderboard } from './Leaderboard';
+import { AudioManager } from './AudioManager';
 import { rectsOverlap, pickRandom, randInt } from './utils';
 
 export class Game {
@@ -24,6 +26,7 @@ export class Game {
   enemies: EnemyTank[] = [];
   bullets: Bullet[] = [];
   powerUps: PowerUp[] = [];
+  explosions: Explosion[] = [];
 
   status: GameStatus = 'menu';
   score = 0;
@@ -42,6 +45,7 @@ export class Game {
   private input: InputManager;
   private renderer: Renderer;
   leaderboard: Leaderboard;
+  audio: AudioManager;
 
   // 游戏结束后的分数登记
   pendingScore = 0;
@@ -59,6 +63,7 @@ export class Game {
     this.input = new InputManager();
     this.player = new PlayerTank(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
     this.leaderboard = new Leaderboard();
+    this.audio = new AudioManager();
     this.map = getLevelMap(0); // 预加载第一关地图，避免菜单渲染时 map 为空
   }
 
@@ -74,6 +79,8 @@ export class Game {
     this.player.fullReset(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
     this.loadLevel(0);
     this.status = 'playing';
+    this.audio.resume();
+    this.audio.startBGM();
   }
 
   loadLevel(level: number) {
@@ -82,6 +89,7 @@ export class Game {
     this.enemies = [];
     this.bullets = [];
     this.powerUps = [];
+    this.explosions = [];
     this.enemiesKilled = 0;
     this.spawnTimer = 0;
     this.spawnIndex = 0;
@@ -126,6 +134,7 @@ export class Game {
     this.updateEnemies();
     this.updateBullets();
     this.updatePowerUps();
+    this.updateExplosions();
     this.updateSpawn();
 
     if (this.freezeTimer > 0) this.freezeTimer--;
@@ -150,7 +159,10 @@ export class Game {
       const playerBullets = this.bullets.filter(b => b.ownerIsPlayer).length;
       if (playerBullets < this.player.maxBullets) {
         const b = this.player.shoot();
-        if (b) this.bullets.push(b);
+        if (b) {
+          this.bullets.push(b);
+          this.audio.playShoot();
+        }
       }
     }
 
@@ -201,6 +213,8 @@ export class Game {
             if (killed) {
               this.score += SCORE[e.kind] || 0;
               this.enemiesKilled++;
+              this.audio.playExplosion();
+              this.explosions.push(new Explosion(e.x + TANK_SIZE / 2, e.y + TANK_SIZE / 2));
               if (e.hasPowerUp) this.spawnPowerUp();
             }
             break;
@@ -263,10 +277,18 @@ export class Game {
       p.update();
       if (this.player.alive && rectsOverlap(p.rect, this.player.rect)) {
         this.applyPowerUp(p.type);
+        this.audio.playPowerUp();
         p.alive = false;
       }
     }
     this.powerUps = this.powerUps.filter(p => p.alive);
+  }
+
+  private updateExplosions() {
+    for (const e of this.explosions) {
+      e.update();
+    }
+    this.explosions = this.explosions.filter(e => e.alive);
   }
 
   private applyPowerUp(type: PowerUpType) {
@@ -371,6 +393,8 @@ export class Game {
   }
 
   private onPlayerDeath() {
+    this.audio.playPlayerDeath();
+    this.explosions.push(new Explosion(this.player.x + TANK_SIZE / 2, this.player.y + TANK_SIZE / 2));
     if (this.player.lives <= 0) {
       this.endGame();
     } else {
@@ -383,6 +407,7 @@ export class Game {
   }
 
   private eagleDestroyed() {
+    this.audio.playExplosion();
     this.endGame();
   }
 
@@ -392,12 +417,16 @@ export class Game {
     this.playerName = '';
     this.nameSubmitted = false;
     this.lastRank = -1;
+    this.audio.stopBGM();
+    this.audio.playGameOver();
     this.onGameOver?.();
   }
 
   private checkGameState() {
     if (this.enemyQueue.length === 0 && this.enemies.every(e => !e.alive)) {
       this.status = 'levelclear';
+      this.audio.stopBGM();
+      this.audio.playLevelClear();
       this.onLevelClear?.();
     }
   }
@@ -405,6 +434,7 @@ export class Game {
   nextLevel() {
     this.loadLevel(this.level + 1);
     this.status = 'playing';
+    this.audio.startBGM();
   }
 
   resume() {
@@ -420,9 +450,10 @@ export class Game {
     if (this.player.alive) r.drawTank(this.player);
     for (const e of this.enemies) r.drawTank(e);
     for (const b of this.bullets) r.drawBullet(b);
+    for (const e of this.explosions) r.drawExplosion(e);
 
     const enemiesLeft = this.enemyQueue.length + this.enemies.filter(e => e.alive).length;
-    r.drawSidebar(this.score, this.player.lives, this.level, enemiesLeft);
+    r.drawSidebar(this.score, this.player.lives, this.level, enemiesLeft, this.audio.isMuted());
 
     if (this.status === 'menu') {
       r.drawMenu();

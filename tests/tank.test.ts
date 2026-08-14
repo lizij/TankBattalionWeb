@@ -89,9 +89,10 @@ describe('PlayerTank upgrades', () => {
 
   it('1 star increases bullet speed', () => {
     const tank = new PlayerTank(0, 0);
+    const baseSpeed = tank.bulletSpeed;
     tank.upgrade();
     expect(tank.stars).toBe(1);
-    expect(tank.bulletSpeed).toBeGreaterThan(5);
+    expect(tank.bulletSpeed).toBeGreaterThan(baseSpeed);
   });
 
   it('2 stars allows 2 bullets', () => {

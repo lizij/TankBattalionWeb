@@ -166,6 +166,10 @@ window.addEventListener('keydown', (e) => {
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
     e.preventDefault();
   }
+  // 静音切换
+  if (e.key === 'm' || e.key === 'M') {
+    game.audio.setMuted(!game.audio.isMuted());
+  }
 });
 
 // 禁止双指缩放
