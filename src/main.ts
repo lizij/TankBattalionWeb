@@ -109,14 +109,19 @@ nameInput.addEventListener('keydown', (e) => {
 
 function updateNameInputVisibility() {
   if (game.status === 'gameover' && !game.nameSubmitted) {
-    // 定位到画布上名字输入框的位置
+    // 定位到画布上名字输入框的位置（游戏区域内）
     const rect = canvas.getBoundingClientRect();
     const scaleX = rect.width / canvas.width;
     const scaleY = rect.height / canvas.height;
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const inputW = Math.min(220, canvas.width * 0.7);
-    const inputH = Math.min(36, canvas.height * 0.14);
+    // 游戏区域偏移
+    const ox = layout === 'mobile' ? 0 : 0;
+    const oy = layout === 'mobile' ? 56 : 0;
+    const pw = PLAYFIELD_W;
+    const ph = PLAYFIELD_H;
+    const cx = ox + pw / 2;
+    const cy = oy + ph / 2;
+    const inputW = Math.min(220, pw * 0.7);
+    const inputH = Math.min(36, ph * 0.14);
     const ix = cx - inputW / 2;
     const iy = cy + 10;
     nameInput.style.display = 'block';

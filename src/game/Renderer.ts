@@ -394,27 +394,33 @@ export class Renderer {
 
   drawOverlay(text: string, subtext?: string) {
     const ctx = this.ctx;
+    const { x: ox, y: oy } = this.playfieldOffset;
+    const pw = PLAYFIELD_W;
+    const ph = PLAYFIELD_H;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
-    const titleSize = Math.min(32, this.canvasH * 0.15);
+    ctx.fillRect(ox, oy, pw, ph);
+    const titleSize = Math.min(32, ph * 0.15);
     ctx.fillStyle = '#ffd700';
     ctx.font = `bold ${titleSize}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, this.canvasW / 2, this.canvasH / 2 - titleSize * 0.3);
+    ctx.fillText(text, ox + pw / 2, oy + ph / 2 - titleSize * 0.3);
     if (subtext) {
       ctx.fillStyle = '#fff';
       ctx.font = `${Math.max(10, titleSize * 0.45)}px monospace`;
-      ctx.fillText(subtext, this.canvasW / 2, this.canvasH / 2 + titleSize * 0.8);
+      ctx.fillText(subtext, ox + pw / 2, oy + ph / 2 + titleSize * 0.8);
     }
   }
 
   // 菜单按钮区域定义
   getMenuButtonAt(x: number, y: number): 'newgame' | 'leaderboard' | null {
-    const cx = this.canvasW / 2;
-    const cy = this.canvasH / 2;
-    const btnW = Math.min(200, this.canvasW * 0.6);
-    const btnH = Math.min(50, this.canvasH * 0.18);
+    const { x: ox, y: oy } = this.playfieldOffset;
+    const pw = PLAYFIELD_W;
+    const ph = PLAYFIELD_H;
+    const cx = ox + pw / 2;
+    const cy = oy + ph / 2;
+    const btnW = Math.min(200, pw * 0.6);
+    const btnH = Math.min(50, ph * 0.18);
     const gap = 12;
     const newGameRect = { x: cx - btnW / 2, y: cy - btnH - gap / 2, w: btnW, h: btnH };
     const lbRect = { x: cx - btnW / 2, y: cy + gap / 2, w: btnW, h: btnH };
@@ -431,35 +437,41 @@ export class Renderer {
 
   drawMenu() {
     const ctx = this.ctx;
-    const cx = this.canvasW / 2;
-    const cy = this.canvasH / 2;
+    const { x: ox, y: oy } = this.playfieldOffset;
+    const pw = PLAYFIELD_W;
+    const ph = PLAYFIELD_H;
+    const cx = ox + pw / 2;
+    const cy = oy + ph / 2;
 
+    // 只覆盖游戏区域，侧边栏保持可见
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+    ctx.fillRect(ox, oy, pw, ph);
 
     // 标题
-    const titleSize = Math.min(36, this.canvasH * 0.18);
+    const titleSize = Math.min(36, ph * 0.18);
     ctx.fillStyle = '#ffd700';
     ctx.font = `bold ${titleSize}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('坦克大战', cx, this.canvasH * 0.22);
+    ctx.fillText('坦克大战', cx, oy + ph * 0.22);
     ctx.fillStyle = '#888';
     ctx.font = `${Math.max(10, titleSize * 0.35)}px monospace`;
-    ctx.fillText('BATTLE CITY', cx, this.canvasH * 0.22 + titleSize * 0.7);
+    ctx.fillText('BATTLE CITY', cx, oy + ph * 0.22 + titleSize * 0.7);
 
     // 按钮
-    const btnW = Math.min(200, this.canvasW * 0.6);
-    const btnH = Math.min(50, this.canvasH * 0.18);
+    const btnW = Math.min(200, pw * 0.6);
+    const btnH = Math.min(50, ph * 0.18);
     const gap = 12;
 
     this.drawButton(cx - btnW / 2, cy - btnH - gap / 2, btnW, btnH, '新游戏', '#4caf50');
     this.drawButton(cx - btnW / 2, cy + gap / 2, btnW, btnH, '排行榜', '#2196f3');
 
-    // 操作提示
+    // 操作提示（分两行，避免截断）
     ctx.fillStyle = '#666';
-    ctx.font = `${Math.max(9, this.canvasH * 0.05)}px monospace`;
-    ctx.fillText('WASD移动  J/空格射击  P暂停  M静音', cx, this.canvasH - 12);
+    const helpFontSize = Math.max(9, ph * 0.045);
+    ctx.font = `${helpFontSize}px monospace`;
+    ctx.fillText('WASD移动  J/空格射击', cx, oy + ph - helpFontSize * 2);
+    ctx.fillText('P暂停  M静音', cx, oy + ph - helpFontSize * 0.6);
   }
 
   private drawButton(x: number, y: number, w: number, h: number, text: string, color: string) {
@@ -478,30 +490,33 @@ export class Renderer {
 
   drawGameOver(score: number, playerName: string, nameSubmitted: boolean, rank: number) {
     const ctx = this.ctx;
-    const cx = this.canvasW / 2;
-    const cy = this.canvasH / 2;
+    const { x: ox, y: oy } = this.playfieldOffset;
+    const pw = PLAYFIELD_W;
+    const ph = PLAYFIELD_H;
+    const cx = ox + pw / 2;
+    const cy = oy + ph / 2;
 
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+    ctx.fillRect(ox, oy, pw, ph);
 
-    const titleSize = Math.min(32, this.canvasH * 0.16);
+    const titleSize = Math.min(32, ph * 0.16);
     ctx.fillStyle = '#ff4444';
     ctx.font = `bold ${titleSize}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('游戏结束', cx, this.canvasH * 0.2);
+    ctx.fillText('游戏结束', cx, oy + ph * 0.2);
 
     ctx.fillStyle = '#ffd700';
-    ctx.font = `bold ${Math.min(20, this.canvasH * 0.1)}px monospace`;
-    ctx.fillText(`得分: ${score}`, cx, this.canvasH * 0.35);
+    ctx.font = `bold ${Math.min(20, ph * 0.1)}px monospace`;
+    ctx.fillText(`得分: ${score}`, cx, oy + ph * 0.35);
 
     if (!nameSubmitted) {
       ctx.fillStyle = '#fff';
-      ctx.font = `${Math.max(10, this.canvasH * 0.06)}px monospace`;
+      ctx.font = `${Math.max(10, ph * 0.06)}px monospace`;
       ctx.fillText('输入名字 (最多10字母):', cx, cy - 10);
       // 名字输入框
-      const inputW = Math.min(220, this.canvasW * 0.7);
-      const inputH = Math.min(36, this.canvasH * 0.14);
+      const inputW = Math.min(220, pw * 0.7);
+      const inputH = Math.min(36, ph * 0.14);
       const ix = cx - inputW / 2;
       const iy = cy + 10;
       ctx.fillStyle = '#222';
@@ -516,38 +531,42 @@ export class Renderer {
       ctx.textAlign = 'center';
     } else {
       ctx.fillStyle = '#4caf50';
-      ctx.font = `${Math.max(12, this.canvasH * 0.07)}px monospace`;
+      ctx.font = `${Math.max(12, ph * 0.07)}px monospace`;
       if (rank > 0) {
         ctx.fillText(`已登记！排名第 ${rank} 名`, cx, cy);
       } else {
         ctx.fillText('已登记（未进入前50）', cx, cy);
       }
       ctx.fillStyle = '#888';
-      ctx.font = `${Math.max(10, this.canvasH * 0.05)}px monospace`;
-      ctx.fillText('按 空格/J 或点击 返回主菜单', cx, cy + this.canvasH * 0.12);
+      ctx.font = `${Math.max(10, ph * 0.05)}px monospace`;
+      ctx.fillText('按 空格/J 或点击 返回主菜单', cx, cy + ph * 0.12);
     }
   }
 
   drawLeaderboard(entries: { name: string; score: number; date: string }[]) {
     const ctx = this.ctx;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+    const { x: ox, y: oy } = this.playfieldOffset;
+    const pw = PLAYFIELD_W;
+    const ph = PLAYFIELD_H;
 
-    const titleSize = Math.min(24, this.canvasH * 0.12);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(ox, oy, pw, ph);
+
+    const titleSize = Math.min(24, ph * 0.12);
     ctx.fillStyle = '#ffd700';
     ctx.font = `bold ${titleSize}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('排行榜', this.canvasW / 2, titleSize);
+    ctx.fillText('排行榜', ox + pw / 2, oy + titleSize);
 
-    const startY = titleSize * 1.8;
-    const lineH = Math.max(14, this.canvasH * 0.065);
+    const startY = oy + titleSize * 1.8;
+    const lineH = Math.max(14, ph * 0.065);
     const fontSize = Math.max(10, lineH * 0.7);
 
     if (entries.length === 0) {
       ctx.fillStyle = '#888';
       ctx.font = `${fontSize}px monospace`;
-      ctx.fillText('暂无记录', this.canvasW / 2, this.canvasH / 2);
+      ctx.fillText('暂无记录', ox + pw / 2, oy + ph / 2);
     } else {
       ctx.font = `${fontSize}px monospace`;
       ctx.textAlign = 'left';
@@ -555,21 +574,21 @@ export class Renderer {
       for (let i = 0; i < maxShow; i++) {
         const e = entries[i];
         const y = startY + i * lineH;
-        if (y > this.canvasH - 25) break;
+        if (y > oy + ph - 25) break;
         ctx.fillStyle = i < 3 ? '#ffd700' : '#fff';
-        ctx.fillText(`${String(i + 1).padStart(2, ' ')}.`, 10, y);
+        ctx.fillText(`${String(i + 1).padStart(2, ' ')}.`, ox + 10, y);
         ctx.fillStyle = '#fff';
-        ctx.fillText(e.name.padEnd(10, ' '), 45, y);
+        ctx.fillText(e.name.padEnd(10, ' '), ox + 45, y);
         ctx.fillStyle = '#4caf50';
         ctx.textAlign = 'right';
-        ctx.fillText(String(e.score), this.canvasW - 10, y);
+        ctx.fillText(String(e.score), ox + pw - 10, y);
         ctx.textAlign = 'left';
       }
     }
 
     ctx.fillStyle = '#888';
-    ctx.font = `${Math.max(9, this.canvasH * 0.05)}px monospace`;
+    ctx.font = `${Math.max(9, ph * 0.05)}px monospace`;
     ctx.textAlign = 'center';
-    ctx.fillText('按 空格/J 或点击 返回', this.canvasW / 2, this.canvasH - 10);
+    ctx.fillText('按 空格/J 或点击 返回', ox + pw / 2, oy + ph - 10);
   }
 }
