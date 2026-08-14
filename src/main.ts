@@ -56,6 +56,7 @@ function setupLayout() {
     if (layout === 'mobile') {
       touchControls = new TouchControls(game.getInput(), document.body);
     }
+    nameInputVisible = false; // 重置，让输入框重新定位
   }
   resize();
 }
@@ -107,34 +108,42 @@ nameInput.addEventListener('keydown', (e) => {
   }
 });
 
+let nameInputVisible = false;
+
 function updateNameInputVisibility() {
-  if (game.status === 'gameover' && !game.nameSubmitted) {
-    // 定位到画布上名字输入框的位置（游戏区域内）
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = rect.width / canvas.width;
-    const scaleY = rect.height / canvas.height;
-    // 游戏区域偏移
-    const ox = layout === 'mobile' ? 0 : 0;
-    const oy = layout === 'mobile' ? 56 : 0;
-    const pw = PLAYFIELD_W;
-    const ph = PLAYFIELD_H;
-    const cx = ox + pw / 2;
-    const cy = oy + ph / 2;
-    const inputW = Math.min(220, pw * 0.7);
-    const inputH = Math.min(36, ph * 0.14);
-    const ix = cx - inputW / 2;
-    const iy = cy + 10;
-    nameInput.style.display = 'block';
-    nameInput.style.left = `${rect.left + ix * scaleX}px`;
-    nameInput.style.top = `${rect.top + iy * scaleY}px`;
-    nameInput.style.width = `${inputW * scaleX}px`;
-    nameInput.style.height = `${inputH * scaleY}px`;
-    nameInput.style.fontSize = `${Math.max(12, inputH * 0.5) * scaleY}px`;
-    if (document.activeElement !== nameInput) {
+  const shouldShow = game.status === 'gameover' && !game.nameSubmitted;
+
+  if (shouldShow) {
+    if (!nameInputVisible) {
+      // 首次显示时设置位置和大小
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = rect.width / canvas.width;
+      const scaleY = rect.height / canvas.height;
+      const oy = layout === 'mobile' ? 56 : 0;
+      const pw = PLAYFIELD_W;
+      const ph = PLAYFIELD_H;
+      const cx = pw / 2;
+      const cy = oy + ph / 2;
+      const inputW = Math.min(220, pw * 0.7);
+      const inputH = Math.min(36, ph * 0.14);
+      const ix = cx - inputW / 2;
+      const iy = cy + 10;
+      nameInput.style.display = 'block';
+      nameInput.style.left = `${rect.left + ix * scaleX}px`;
+      nameInput.style.top = `${rect.top + iy * scaleY}px`;
+      nameInput.style.width = `${inputW * scaleX}px`;
+      nameInput.style.height = `${inputH * scaleY}px`;
+      nameInput.style.fontSize = `${Math.max(12, inputH * 0.5) * scaleY}px`;
+      nameInput.value = game.playerName;
       nameInput.focus();
+      nameInputVisible = true;
     }
   } else {
-    nameInput.style.display = 'none';
+    if (nameInputVisible) {
+      nameInput.style.display = 'none';
+      nameInput.value = '';
+      nameInputVisible = false;
+    }
   }
 }
 
