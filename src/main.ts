@@ -115,16 +115,16 @@ function updateNameInputVisibility() {
     const scaleY = rect.height / canvas.height;
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
-    const inputW = 220;
-    const inputH = 36;
+    const inputW = Math.min(220, canvas.width * 0.7);
+    const inputH = Math.min(36, canvas.height * 0.14);
     const ix = cx - inputW / 2;
-    const iy = cy + 20;
+    const iy = cy + 10;
     nameInput.style.display = 'block';
     nameInput.style.left = `${rect.left + ix * scaleX}px`;
     nameInput.style.top = `${rect.top + iy * scaleY}px`;
     nameInput.style.width = `${inputW * scaleX}px`;
     nameInput.style.height = `${inputH * scaleY}px`;
-    nameInput.style.fontSize = `${18 * scaleY}px`;
+    nameInput.style.fontSize = `${Math.max(12, inputH * 0.5) * scaleY}px`;
     if (document.activeElement !== nameInput) {
       nameInput.focus();
     }
