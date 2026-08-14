@@ -6,10 +6,12 @@ import {
   ENEMY_SPEED_HEAVY,
   BULLET_SPEED,
   BULLET_SPEED_RAPID,
+  EAGLE_POS,
+  TILE_SIZE,
 } from './constants';
 import { Tank } from './Tank';
 import { Bullet } from './Bullet';
-import { randInt, pickRandom, dirVector } from './utils';
+import { randInt } from './utils';
 
 const ENEMY_STATS: Record<string, { speed: number; hp: number; bulletSpeed: number; score: number }> = {
   light:   { speed: ENEMY_SPEED_LIGHT,   hp: 1, bulletSpeed: BULLET_SPEED,       score: 100 },
@@ -73,16 +75,29 @@ export class EnemyTank extends Tank {
       dir = this.dirToward(target);
       // 加入随机性
       if (Math.random() < 0.3) {
-        dir = pickRandom<Direction>(['up', 'down', 'left', 'right']);
+        const allDirs: Direction[] = ['up', 'down', 'left', 'right'];
+        dir = allDirs[Math.floor(Math.random() * allDirs.length)];
       }
       this.aiDirTimer = randInt(30, 90);
     }
 
-    // 尝试移动，如果被阻挡则换方向
-    const moved = this.tryMove(dir, map, others);
+    // 尝试移动，如果被阻挡则尝试其他方向
+    let moved = this.tryMove(dir, map, others);
     if (!moved) {
-      const dirs: Direction[] = ['up', 'down', 'left', 'right'].filter(d => d !== dir) as Direction[];
-      dir = pickRandom(dirs);
+      const dirs: Direction[] = (['up', 'down', 'left', 'right'] as Direction[])
+        .filter(d => d !== dir);
+      // 打乱顺序依次尝试
+      for (let i = dirs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
+      }
+      for (const d of dirs) {
+        if (this.tryMove(d, map, others)) {
+          dir = d;
+          moved = true;
+          break;
+        }
+      }
       this.aiDirTimer = randInt(20, 60);
     }
 
@@ -102,8 +117,8 @@ export class EnemyTank extends Tank {
     if (player && Math.random() < 0.7) {
       return { x: player.x + player.w / 2, y: player.y + player.h / 2 };
     }
-    // 基地位置（底部中央）
-    return { x: 6 * 32 + 32, y: 11 * 32 + 32 };
+    // 基地位置（底部中央，老鹰 2x2 的中心）
+    return { x: EAGLE_POS.x + TILE_SIZE, y: EAGLE_POS.y + TILE_SIZE };
   }
 
   private dirToward(target: { x: number; y: number }): Direction {

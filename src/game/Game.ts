@@ -15,6 +15,7 @@ import { Bullet } from './Bullet';
 import { PowerUp } from './PowerUp';
 import { InputManager } from './InputManager';
 import { Renderer, LayoutMode } from './Renderer';
+import { Leaderboard } from './Leaderboard';
 import { rectsOverlap, pickRandom, randInt } from './utils';
 
 export class Game {
@@ -40,6 +41,13 @@ export class Game {
 
   private input: InputManager;
   private renderer: Renderer;
+  leaderboard: Leaderboard;
+
+  // 游戏结束后的分数登记
+  pendingScore = 0;
+  playerName = '';
+  nameSubmitted = false;
+  lastRank = -1;
 
   onGameOver?: () => void;
   onLevelClear?: () => void;
@@ -50,6 +58,7 @@ export class Game {
     this.renderer = new Renderer(ctx, layout);
     this.input = new InputManager();
     this.player = new PlayerTank(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
+    this.leaderboard = new Leaderboard();
   }
 
   // 暴露 input 供触屏控件使用
@@ -61,6 +70,7 @@ export class Game {
     this.score = 0;
     this.level = 0;
     this.player.lives = 3;
+    this.player.fullReset(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
     this.loadLevel(0);
     this.status = 'playing';
   }
@@ -361,11 +371,10 @@ export class Game {
 
   private onPlayerDeath() {
     if (this.player.lives <= 0) {
-      this.status = 'gameover';
-      this.onGameOver?.();
+      this.endGame();
     } else {
       setTimeout(() => {
-        if (this.status === 'playing') {
+        if (this.status !== 'gameover') {
           this.player.reset(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
         }
       }, 1000);
@@ -373,7 +382,15 @@ export class Game {
   }
 
   private eagleDestroyed() {
+    this.endGame();
+  }
+
+  private endGame() {
     this.status = 'gameover';
+    this.pendingScore = this.score;
+    this.playerName = '';
+    this.nameSubmitted = false;
+    this.lastRank = -1;
     this.onGameOver?.();
   }
 
@@ -407,27 +424,86 @@ export class Game {
     r.drawSidebar(this.score, this.player.lives, this.level, enemiesLeft);
 
     if (this.status === 'menu') {
-      r.drawOverlay('坦克大战', '按 空格 或 手柄A 开始');
+      r.drawMenu();
     } else if (this.status === 'paused') {
       r.drawOverlay('已暂停', '按 P 继续');
     } else if (this.status === 'gameover') {
-      r.drawOverlay('游戏结束', `最终得分: ${this.score}  按空格重新开始`);
+      r.drawGameOver(this.pendingScore, this.playerName, this.nameSubmitted, this.lastRank);
     } else if (this.status === 'levelclear') {
       r.drawOverlay(`第 ${this.level + 1} 关通过!`, '按空格进入下一关');
+    } else if (this.status === 'leaderboard') {
+      r.drawLeaderboard(this.leaderboard.getEntries());
     }
   }
 
-  // 处理菜单/结束界面的按键
+  // 处理菜单/结束/排行榜界面的按键
   handleMenuInput() {
     const state = this.input.getState();
-    if (state.shootPressed || state.pausePressed) {
-      if (this.status === 'menu' || this.status === 'gameover') {
+
+    if (this.status === 'menu') {
+      // 菜单：按射击键开始新游戏
+      if (state.shootPressed) {
         this.startGame();
-      } else if (this.status === 'levelclear') {
-        this.nextLevel();
-      } else if (this.status === 'paused') {
+      }
+    } else if (this.status === 'gameover') {
+      // 游戏结束：登记分数后按射击键返回菜单
+      if (this.nameSubmitted && state.shootPressed) {
+        this.status = 'menu';
+      }
+    } else if (this.status === 'leaderboard') {
+      // 排行榜：按射击键返回菜单
+      if (state.shootPressed || state.pausePressed) {
+        this.status = 'menu';
+      }
+    } else if (this.status === 'paused') {
+      if (state.pausePressed || state.shootPressed) {
         this.resume();
       }
+    } else if (this.status === 'levelclear') {
+      if (state.shootPressed) {
+        this.nextLevel();
+      }
     }
+  }
+
+  // 处理画布点击（菜单按钮等）
+  handleClick(canvasX: number, canvasY: number) {
+    if (this.status === 'menu') {
+      const btn = this.renderer.getMenuButtonAt(canvasX, canvasY);
+      if (btn === 'newgame') {
+        this.startGame();
+      } else if (btn === 'leaderboard') {
+        this.status = 'leaderboard';
+      }
+    } else if (this.status === 'gameover' && this.nameSubmitted) {
+      // 点击返回菜单
+      this.status = 'menu';
+    } else if (this.status === 'leaderboard') {
+      this.status = 'menu';
+    }
+  }
+
+  // 输入玩家名字（来自 DOM 输入框）
+  setPlayerName(name: string) {
+    this.playerName = name.slice(0, this.leaderboard.getMaxNameLength());
+  }
+
+  // 提交分数到排行榜
+  submitScore(): number {
+    if (this.nameSubmitted) return this.lastRank;
+    const rank = this.leaderboard.addScore(this.playerName, this.pendingScore);
+    this.nameSubmitted = true;
+    this.lastRank = rank;
+    return rank;
+  }
+
+  // 查看排行榜
+  showLeaderboard() {
+    this.status = 'leaderboard';
+  }
+
+  // 返回主菜单
+  backToMenu() {
+    this.status = 'menu';
   }
 }

@@ -373,4 +373,166 @@ export class Renderer {
       ctx.fillText(subtext, this.canvasW / 2, this.canvasH / 2 + 30);
     }
   }
+
+  // 菜单按钮区域定义
+  getMenuButtonAt(x: number, y: number): 'newgame' | 'leaderboard' | null {
+    const cx = this.canvasW / 2;
+    const cy = this.canvasH / 2;
+    const btnW = 200;
+    const btnH = 50;
+    const gap = 20;
+    const newGameRect = { x: cx - btnW / 2, y: cy - btnH - gap / 2, w: btnW, h: btnH };
+    const lbRect = { x: cx - btnW / 2, y: cy + gap / 2, w: btnW, h: btnH };
+    if (x >= newGameRect.x && x <= newGameRect.x + newGameRect.w &&
+        y >= newGameRect.y && y <= newGameRect.y + newGameRect.h) {
+      return 'newgame';
+    }
+    if (x >= lbRect.x && x <= lbRect.x + lbRect.w &&
+        y >= lbRect.y && y <= lbRect.y + lbRect.h) {
+      return 'leaderboard';
+    }
+    return null;
+  }
+
+  drawMenu() {
+    const ctx = this.ctx;
+    const cx = this.canvasW / 2;
+    const cy = this.canvasH / 2;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+
+    // 标题
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 40px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('坦克大战', cx, cy - 120);
+    ctx.fillStyle = '#888';
+    ctx.font = '14px monospace';
+    ctx.fillText('BATTLE CITY', cx, cy - 85);
+
+    // 按钮
+    const btnW = 200;
+    const btnH = 50;
+    const gap = 20;
+
+    this.drawButton(cx - btnW / 2, cy - btnH - gap / 2, btnW, btnH, '新游戏', '#4caf50');
+    this.drawButton(cx - btnW / 2, cy + gap / 2, btnW, btnH, '排行榜', '#2196f3');
+
+    // 操作提示
+    ctx.fillStyle = '#666';
+    ctx.font = '12px monospace';
+    ctx.fillText('键盘: WASD移动 J射击 P暂停', cx, this.canvasH - 30);
+  }
+
+  private drawButton(x: number, y: number, w: number, h: number, text: string, color: string) {
+    const ctx = this.ctx;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + w / 2, y + h / 2);
+  }
+
+  drawGameOver(score: number, playerName: string, nameSubmitted: boolean, rank: number) {
+    const ctx = this.ctx;
+    const cx = this.canvasW / 2;
+    const cy = this.canvasH / 2;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+
+    ctx.fillStyle = '#ff4444';
+    ctx.font = 'bold 36px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('游戏结束', cx, cy - 100);
+
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 24px monospace';
+    ctx.fillText(`得分: ${score}`, cx, cy - 50);
+
+    if (!nameSubmitted) {
+      ctx.fillStyle = '#fff';
+      ctx.font = '16px monospace';
+      ctx.fillText('输入名字 (最多10字母):', cx, cy);
+      // 名字输入框
+      const inputW = 220;
+      const inputH = 36;
+      const ix = cx - inputW / 2;
+      const iy = cy + 20;
+      ctx.fillStyle = '#222';
+      ctx.fillRect(ix, iy, inputW, inputH);
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(ix, iy, inputW, inputH);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 18px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(playerName.toUpperCase() + (Math.floor(Date.now() / 500) % 2 === 0 ? '_' : ''), ix + 10, iy + inputH / 2);
+      ctx.textAlign = 'center';
+    } else {
+      ctx.fillStyle = '#4caf50';
+      ctx.font = '18px monospace';
+      if (rank > 0) {
+        ctx.fillText(`已登记！排名第 ${rank} 名`, cx, cy + 10);
+      } else {
+        ctx.fillText('已登记（未进入前50）', cx, cy + 10);
+      }
+      ctx.fillStyle = '#888';
+      ctx.font = '14px monospace';
+      ctx.fillText('按 空格/J 或点击 返回主菜单', cx, cy + 50);
+    }
+  }
+
+  drawLeaderboard(entries: { name: string; score: number; date: string }[]) {
+    const ctx = this.ctx;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 28px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('排行榜', this.canvasW / 2, 30);
+
+    if (entries.length === 0) {
+      ctx.fillStyle = '#888';
+      ctx.font = '16px monospace';
+      ctx.fillText('暂无记录', this.canvasW / 2, this.canvasH / 2);
+    } else {
+      ctx.font = '13px monospace';
+      ctx.textAlign = 'left';
+      const startY = 60;
+      const lineH = 18;
+      const maxShow = Math.min(entries.length, 50);
+      for (let i = 0; i < maxShow; i++) {
+        const e = entries[i];
+        const y = startY + i * lineH;
+        if (y > this.canvasH - 40) break;
+        // 排名
+        ctx.fillStyle = i < 3 ? '#ffd700' : '#fff';
+        ctx.fillText(`${String(i + 1).padStart(2, ' ')}.`, 20, y);
+        // 名字
+        ctx.fillStyle = '#fff';
+        ctx.fillText(e.name.padEnd(10, ' '), 60, y);
+        // 分数
+        ctx.fillStyle = '#4caf50';
+        ctx.textAlign = 'right';
+        ctx.fillText(String(e.score), this.canvasW - 20, y);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    ctx.fillStyle = '#888';
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('按 空格/J 或点击 返回', this.canvasW / 2, this.canvasH - 15);
+  }
 }

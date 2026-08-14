@@ -44,4 +44,4 @@ export interface Rect {
   h: number;
 }
 
-export type GameStatus = 'menu' | 'playing' | 'paused' | 'gameover' | 'levelclear';
+export type GameStatus = 'menu' | 'playing' | 'paused' | 'gameover' | 'levelclear' | 'leaderboard';

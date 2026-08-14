@@ -65,6 +65,74 @@ if (layout === 'mobile') {
   touchControls = new TouchControls(game.getInput(), document.body);
 }
 
+// 画布点击处理（菜单按钮等）
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+  game.handleClick(x, y);
+});
+
+// 名字输入框（游戏结束时登记分数）
+const nameInput = document.createElement('input');
+nameInput.type = 'text';
+nameInput.maxLength = 10;
+nameInput.placeholder = '输入名字';
+nameInput.style.position = 'absolute';
+nameInput.style.display = 'none';
+nameInput.style.zIndex = '10';
+nameInput.style.background = '#222';
+nameInput.style.color = '#fff';
+nameInput.style.border = '2px solid #ffd700';
+nameInput.style.fontSize = '18px';
+nameInput.style.fontFamily = 'monospace';
+nameInput.style.textAlign = 'center';
+nameInput.style.textTransform = 'uppercase';
+nameInput.style.padding = '6px';
+nameInput.style.outline = 'none';
+document.body.appendChild(nameInput);
+
+nameInput.addEventListener('input', () => {
+  game.setPlayerName(nameInput.value);
+});
+
+nameInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    game.submitScore();
+    nameInput.style.display = 'none';
+    nameInput.blur();
+  }
+});
+
+function updateNameInputVisibility() {
+  if (game.status === 'gameover' && !game.nameSubmitted) {
+    // 定位到画布上名字输入框的位置
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = rect.width / canvas.width;
+    const scaleY = rect.height / canvas.height;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const inputW = 220;
+    const inputH = 36;
+    const ix = cx - inputW / 2;
+    const iy = cy + 20;
+    nameInput.style.display = 'block';
+    nameInput.style.left = `${rect.left + ix * scaleX}px`;
+    nameInput.style.top = `${rect.top + iy * scaleY}px`;
+    nameInput.style.width = `${inputW * scaleX}px`;
+    nameInput.style.height = `${inputH * scaleY}px`;
+    nameInput.style.fontSize = `${18 * scaleY}px`;
+    if (document.activeElement !== nameInput) {
+      nameInput.focus();
+    }
+  } else {
+    nameInput.style.display = 'none';
+  }
+}
+
 window.addEventListener('resize', setupLayout);
 window.addEventListener('orientationchange', () => setTimeout(setupLayout, 100));
 
@@ -86,6 +154,7 @@ function loop(time: number) {
       game.update();
     }
     game.render();
+    updateNameInputVisibility();
   }
   requestAnimationFrame(loop);
 }
