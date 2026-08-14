@@ -1,16 +1,16 @@
 // 游戏常量
 
 export const TILE_SIZE = 16;          // 每个格子像素大小
-export const MAP_COLS = 13;           // 地图列数
-export const MAP_ROWS = 13;           // 地图行数
-export const PLAYFIELD_W = TILE_SIZE * MAP_COLS; // 208
-export const PLAYFIELD_H = TILE_SIZE * MAP_ROWS; // 208
+export const MAP_COLS = 26;           // 地图列数（画布 416 / 16 = 26）
+export const MAP_ROWS = 26;           // 地图行数（画布 416 / 16 = 16）
+export const PLAYFIELD_W = TILE_SIZE * MAP_COLS; // 416
+export const PLAYFIELD_H = TILE_SIZE * MAP_ROWS; // 416
 
 export const SIDEBAR_W = 160;         // 右侧信息栏宽度
 export const CANVAS_W = PLAYFIELD_W + SIDEBAR_W;
 export const CANVAS_H = PLAYFIELD_H;
 
-// 坦克尺寸（占 2x2 格 = 32x32）
+// 坦克尺寸（占 2x2 格 = 32x32，原 64x64 的一半）
 export const TANK_SIZE = TILE_SIZE * 2;
 
 // 坦克速度（像素/帧）
@@ -35,20 +35,20 @@ export const MAX_ENEMIES_ON_SCREEN = 4;
 // 敌人出生点（地图顶部三处，需对齐到格子）
 export const ENEMY_SPAWNS = [
   { x: 0, y: 0 },
-  { x: 5 * TILE_SIZE, y: 0 },   // 中间
-  { x: 11 * TILE_SIZE, y: 0 },  // 右侧
+  { x: 10 * TILE_SIZE, y: 0 },   // 中间
+  { x: 22 * TILE_SIZE, y: 0 },  // 右侧
 ];
 
 // 玩家出生点（基地左侧）
 export const PLAYER_SPAWN = {
-  x: 3 * TILE_SIZE,
-  y: 11 * TILE_SIZE,
+  x: 6 * TILE_SIZE,
+  y: 22 * TILE_SIZE,
 };
 
 // 老鹰基地位置（底部中央，2x2 块的左上角）
 export const EAGLE_POS = {
-  x: 6 * TILE_SIZE,
-  y: 11 * TILE_SIZE,
+  x: 12 * TILE_SIZE,
+  y: 22 * TILE_SIZE,
 };
 
 // 分数

@@ -76,15 +76,15 @@ describe('Game bullet-terrain collision', () => {
         map[r][c] = TileType.Empty;
       }
     }
-    // 玩家在 (4*32, 11*32)，朝右
+    // 玩家在 PLAYER_SPAWN，朝右
     game.player.x = PLAYER_SPAWN.x;
     game.player.y = PLAYER_SPAWN.y;
     game.player.dir = 'right';
 
-    // 在玩家右侧放砖墙
-    const brickCol = 8;
-    const brickRow = 11;
-    map[brickRow][brickCol] = TileType.Brick;
+    // 在玩家右侧放砖墙（子弹 y 坐标对应的行）
+    const bulletRow = Math.floor((PLAYER_SPAWN.y + TILE_SIZE) / TILE_SIZE);
+    const brickCol = 10;
+    map[bulletRow][brickCol] = TileType.Brick;
 
     // 发射子弹
     const b = game.player.shoot();
@@ -97,7 +97,7 @@ describe('Game bullet-terrain collision', () => {
       if (!b!.alive) break;
     }
 
-    expect(map[brickRow][brickCol]).toBe(TileType.Empty);
+    expect(map[bulletRow][brickCol]).toBe(TileType.Empty);
   });
 
   it('normal bullet cannot destroy steel', () => {
@@ -109,7 +109,8 @@ describe('Game bullet-terrain collision', () => {
     game.player.y = PLAYER_SPAWN.y;
     game.player.dir = 'right';
 
-    map[11][8] = TileType.Steel;
+    const bulletRow = Math.floor((PLAYER_SPAWN.y + TILE_SIZE) / TILE_SIZE);
+    map[bulletRow][10] = TileType.Steel;
 
     const b = game.player.shoot();
     game.bullets.push(b!);
@@ -119,7 +120,7 @@ describe('Game bullet-terrain collision', () => {
       if (!b!.alive) break;
     }
 
-    expect(map[11][8]).toBe(TileType.Steel);
+    expect(map[bulletRow][10]).toBe(TileType.Steel);
   });
 
   it('3-star player bullet destroys steel', () => {
@@ -134,7 +135,8 @@ describe('Game bullet-terrain collision', () => {
     game.player.upgrade();
     game.player.upgrade();
 
-    map[11][8] = TileType.Steel;
+    const bulletRow = Math.floor((PLAYER_SPAWN.y + TILE_SIZE) / TILE_SIZE);
+    map[bulletRow][10] = TileType.Steel;
 
     const b = game.player.shoot();
     game.bullets.push(b!);
@@ -144,7 +146,7 @@ describe('Game bullet-terrain collision', () => {
       if (!b!.alive) break;
     }
 
-    expect(map[11][8]).toBe(TileType.Empty);
+    expect(map[bulletRow][10]).toBe(TileType.Empty);
   });
 
   it('bullet hitting eagle triggers game over', () => {
@@ -153,12 +155,12 @@ describe('Game bullet-terrain collision', () => {
       for (let c = 0; c < MAP_COLS; c++) map[r][c] = TileType.Empty;
     }
     // 放老鹰
-    map[11][6] = TileType.Eagle;
+    map[10][12] = TileType.Eagle;
 
-    const b = new Bullet(6 * TILE_SIZE, 5 * TILE_SIZE, 'down', false);
+    const b = new Bullet(12 * TILE_SIZE, 5 * TILE_SIZE, 'down', false);
     game.bullets.push(b);
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 200; i++) {
       game['updateBullets']();
       if (game.status === 'gameover') break;
     }
@@ -201,8 +203,8 @@ describe('Game power-ups', () => {
   it('shovel power-up fortifies base with steel', () => {
     const map = game.map;
     // 确保基地周围有砖墙
-    const ec = 6;
-    const er = 11;
+    const ec = Math.floor(PLAYER_SPAWN.x / TILE_SIZE) + 6; // 老鹰列
+    const er = Math.floor(PLAYER_SPAWN.y / TILE_SIZE); // 老鹰行
     map[er - 1][ec] = TileType.Brick;
 
     game['applyPowerUp'](PowerUpType.Shovel);

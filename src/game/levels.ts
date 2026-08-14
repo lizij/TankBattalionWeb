@@ -4,9 +4,8 @@ import { MAP_COLS, MAP_ROWS } from './constants';
 // 关卡地图定义
 // 字符含义:
 // . 空地  B 砖墙  S 钢墙  W 水  T 树林  I 冰  E 老鹰基地
-// 地图为 13x13 格
-// 老鹰基地为 2x2 块，位于底部中央 (cols 6-7, rows 11-12)
-// 基地周围为 U 形砖墙：row10 cols4-8, col5 rows11-12, col8 rows11-12
+// 原始地图为 13x13 格，parseLevel 会自动扩展为 26x26（每格变 2x2）
+// 老鹰基地为 2x2 块（扩展后 4x4），位于底部中央
 
 const LEVEL_1 = [
   '.............',
@@ -90,11 +89,25 @@ const LEVEL_5 = [
 
 export const LEVELS: string[][] = [LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5];
 
+// 将 13x13 的关卡字符串扩展为 26x26（每个字符横向、纵向各复制一次）
+function expandLevel(level: string[]): string[] {
+  const expanded: string[] = [];
+  for (const line of level) {
+    // 横向扩展：每个字符重复两次
+    const expandedLine = line.split('').map(ch => ch + ch).join('');
+    // 纵向扩展：每行重复两次
+    expanded.push(expandedLine);
+    expanded.push(expandedLine);
+  }
+  return expanded;
+}
+
 export function parseLevel(level: string[]): TileType[][] {
+  const expanded = expandLevel(level);
   const map: TileType[][] = [];
   for (let r = 0; r < MAP_ROWS; r++) {
     const row: TileType[] = [];
-    const line = level[r] || '';
+    const line = expanded[r] || '';
     for (let c = 0; c < MAP_COLS; c++) {
       const ch = line[c] || '.';
       row.push(charToTile(ch));

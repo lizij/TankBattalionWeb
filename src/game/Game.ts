@@ -324,12 +324,16 @@ export class Game {
   private fortifyBase() {
     const ec = Math.floor(EAGLE_POS.x / TILE_SIZE);
     const er = Math.floor(EAGLE_POS.y / TILE_SIZE);
-    // 老鹰为 2x2 (cols ec..ec+1, rows er..er+1)
+    // 老鹰为 4x4 (cols ec..ec+3, rows er..er+3)
     // 周围 U 形砖墙：顶部一行、左列、右列
     const positions: [number, number][] = [
-      [ec - 2, er - 1], [ec - 1, er - 1], [ec, er - 1], [ec + 1, er - 1], [ec + 2, er - 1],
-      [ec - 1, er], [ec + 2, er],
-      [ec - 1, er + 1], [ec + 2, er + 1],
+      // 顶部
+      [ec - 2, er - 1], [ec - 1, er - 1], [ec, er - 1], [ec + 1, er - 1],
+      [ec + 2, er - 1], [ec + 3, er - 1], [ec + 4, er - 1],
+      // 左侧
+      [ec - 1, er], [ec - 1, er + 1], [ec - 1, er + 2], [ec - 1, er + 3],
+      // 右侧
+      [ec + 4, er], [ec + 4, er + 1], [ec + 4, er + 2], [ec + 4, er + 3],
     ];
     for (const [c, r] of positions) {
       if (r >= 0 && r < MAP_ROWS && c >= 0 && c < MAP_COLS) {
@@ -344,9 +348,10 @@ export class Game {
     const ec = Math.floor(EAGLE_POS.x / TILE_SIZE);
     const er = Math.floor(EAGLE_POS.y / TILE_SIZE);
     const positions: [number, number][] = [
-      [ec - 2, er - 1], [ec - 1, er - 1], [ec, er - 1], [ec + 1, er - 1], [ec + 2, er - 1],
-      [ec - 1, er], [ec + 2, er],
-      [ec - 1, er + 1], [ec + 2, er + 1],
+      [ec - 2, er - 1], [ec - 1, er - 1], [ec, er - 1], [ec + 1, er - 1],
+      [ec + 2, er - 1], [ec + 3, er - 1], [ec + 4, er - 1],
+      [ec - 1, er], [ec - 1, er + 1], [ec - 1, er + 2], [ec - 1, er + 3],
+      [ec + 4, er], [ec + 4, er + 1], [ec + 4, er + 2], [ec + 4, er + 3],
     ];
     for (const [c, r] of positions) {
       if (r >= 0 && r < MAP_ROWS && c >= 0 && c < MAP_COLS) {
