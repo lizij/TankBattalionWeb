@@ -22,13 +22,20 @@ try {
   });
 }
 
+const mockGradient = {
+  addColorStop: () => {},
+};
+
 const canvas = {
   getContext: () => ({
     fillRect: () => {}, clearRect: () => {}, fillText: () => {},
     strokeRect: () => {}, beginPath: () => {}, arc: () => {},
     fill: () => {}, stroke: () => {}, moveTo: () => {}, lineTo: () => {},
     save: () => {}, restore: () => {}, translate: () => {}, rotate: () => {},
+    createLinearGradient: () => mockGradient,
+    createRadialGradient: () => mockGradient,
     fillStyle: '', strokeStyle: '', font: '', textAlign: '', textBaseline: '', lineWidth: 0,
+    globalAlpha: 1, globalCompositeOperation: '',
   }),
   width: 0, height: 0,
 } as unknown as HTMLCanvasElement;

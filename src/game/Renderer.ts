@@ -12,6 +12,9 @@ import { Explosion } from './Explosion';
 
 export type LayoutMode = 'desktop' | 'mobile';
 
+// 光源方向（左上方），用于模拟方向光
+const LIGHT_DIR = { x: -1, y: -1 };
+
 export class Renderer {
   ctx: CanvasRenderingContext2D;
   layout: LayoutMode;
@@ -74,9 +77,16 @@ export class Renderer {
 
   drawBrick(x: number, y: number, s: number) {
     const ctx = this.ctx;
-    ctx.fillStyle = '#b5651d';
+    // 主体渐变：左上亮、右下暗，模拟方向光
+    const grad = ctx.createLinearGradient(x, y, x + s, y + s);
+    grad.addColorStop(0, '#c87533');
+    grad.addColorStop(0.5, '#b5651d');
+    grad.addColorStop(1, '#8b4513');
+    ctx.fillStyle = grad;
     ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = '#8b4513';
+
+    // 砖缝
+    ctx.fillStyle = '#5c2e0a';
     const half = s / 2;
     const quarter = s / 4;
     ctx.fillRect(x, y + half - 1, s, 2);
@@ -86,25 +96,64 @@ export class Renderer {
     ctx.fillRect(x, y + half, 2, half);
     ctx.fillRect(x + half, y + half, 2, half);
     ctx.fillRect(x + s - 2, y + half, 2, half);
+
+    // 顶部高光（受光面）
+    ctx.fillStyle = 'rgba(255, 200, 120, 0.25)';
+    ctx.fillRect(x, y, s, 2);
+    ctx.fillRect(x, y, 2, s);
+    // 底部阴影（背光面）
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(x, y + s - 2, s, 2);
+    ctx.fillRect(x + s - 2, y, 2, s);
   }
 
   drawSteel(x: number, y: number, s: number) {
     const ctx = this.ctx;
-    ctx.fillStyle = '#c0c0c0';
+    // 金属渐变：左上亮银、右下暗灰
+    const grad = ctx.createLinearGradient(x, y, x + s, y + s);
+    grad.addColorStop(0, '#e8e8e8');
+    grad.addColorStop(0.3, '#c0c0c0');
+    grad.addColorStop(0.7, '#909090');
+    grad.addColorStop(1, '#606060');
+    ctx.fillStyle = grad;
     ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = '#808080';
+
+    // 内框
+    ctx.fillStyle = '#707070';
     ctx.fillRect(x + 2, y + 2, s - 4, s - 4);
-    ctx.fillStyle = '#e0e0e0';
+
+    // 内层金属高光
+    const innerGrad = ctx.createLinearGradient(x + 4, y + 4, x + s - 4, y + s - 4);
+    innerGrad.addColorStop(0, '#d0d0d0');
+    innerGrad.addColorStop(0.5, '#a0a0a0');
+    innerGrad.addColorStop(1, '#707070');
+    ctx.fillStyle = innerGrad;
     ctx.fillRect(x + 4, y + 4, s - 8, s - 8);
-    ctx.fillStyle = '#fff';
+
+    // 左上角高光点（金属反射）
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.fillRect(x + 4, y + 4, 3, 3);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillRect(x + 4, y + 7, 2, 2);
+
+    // 右下阴影边
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(x + s - 3, y + 3, 1, s - 6);
+    ctx.fillRect(x + 3, y + s - 3, s - 6, 1);
   }
 
   drawWater(x: number, y: number, s: number) {
     const ctx = this.ctx;
-    ctx.fillStyle = '#1e5fbf';
+    // 水面渐变
+    const grad = ctx.createLinearGradient(x, y, x, y + s);
+    grad.addColorStop(0, '#2a6fcf');
+    grad.addColorStop(0.5, '#1e5fbf');
+    grad.addColorStop(1, '#154a9e');
+    ctx.fillStyle = grad;
     ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = '#4a90d9';
+
+    // 波纹动画
+    ctx.fillStyle = 'rgba(120, 180, 255, 0.5)';
     const t = Math.floor(Date.now() / 300) % 2;
     if (t === 0) {
       ctx.fillRect(x + 2, y + 6, s - 4, 2);
@@ -114,6 +163,10 @@ export class Renderer {
       ctx.fillRect(x + 6, y + 10, s - 12, 2);
       ctx.fillRect(x + 2, y + 20, s - 4, 2);
     }
+
+    // 顶部高光
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.fillRect(x, y, s, 1);
   }
 
   drawTrees(x: number, y: number, s: number) {
@@ -145,14 +198,33 @@ export class Renderer {
 
   drawEagle(x: number, y: number, s: number) {
     const ctx = this.ctx;
-    ctx.fillStyle = '#000';
+    // 底座阴影
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(x + 2, y + 2, s, s);
+
+    ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = '#ffd700';
+
+    // 老鹰主体渐变
+    const bodyGrad = ctx.createLinearGradient(x, y, x, y + s);
+    bodyGrad.addColorStop(0, '#ffd700');
+    bodyGrad.addColorStop(1, '#b8860b');
+    ctx.fillStyle = bodyGrad;
     ctx.fillRect(x + s * 0.3, y + s * 0.2, s * 0.4, s * 0.15);
     ctx.fillRect(x + s * 0.2, y + s * 0.35, s * 0.6, s * 0.3);
     ctx.fillRect(x + s * 0.1, y + s * 0.4, s * 0.15, s * 0.2);
     ctx.fillRect(x + s * 0.75, y + s * 0.4, s * 0.15, s * 0.2);
-    ctx.fillStyle = '#ff4500';
+
+    // 高光
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillRect(x + s * 0.3, y + s * 0.2, s * 0.4, 1);
+    ctx.fillRect(x + s * 0.2, y + s * 0.35, 1, s * 0.3);
+
+    // 底座
+    const baseGrad = ctx.createLinearGradient(x, y + s * 0.65, x, y + s);
+    baseGrad.addColorStop(0, '#ff6347');
+    baseGrad.addColorStop(1, '#8b0000');
+    ctx.fillStyle = baseGrad;
     ctx.fillRect(x + s * 0.4, y + s * 0.65, s * 0.2, s * 0.15);
   }
 
@@ -169,54 +241,106 @@ export class Renderer {
       return;
     }
 
+    // 投射阴影（向右下偏移）
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fillRect(x + 3, y + 4, size, size);
+    ctx.restore();
+
     ctx.save();
     ctx.translate(x + size / 2, y + size / 2);
     ctx.rotate(this.dirToAngle(tank.dir));
 
     let bodyColor = '#d4a017';
     let trackColor = '#8b6914';
+    let highlightColor = '#f0c040';
+    let shadowColor = '#6b4f0e';
     if (tank instanceof EnemyTank) {
-      const colors: Record<string, [string, string]> = {
-        light: ['#d3d3d3', '#808080'],
-        armored: ['#ff8c00', '#b85c00'],
-        rapid: ['#90ee90', '#2e8b57'],
-        heavy: ['#ff6347', '#a52a2a'],
+      const colors: Record<string, [string, string, string, string]> = {
+        light: ['#d3d3d3', '#808080', '#ffffff', '#505050'],
+        armored: ['#ff8c00', '#b85c00', '#ffb040', '#803800'],
+        rapid: ['#90ee90', '#2e8b57', '#c0ffc0', '#1a5c30'],
+        heavy: ['#ff6347', '#a52a2a', '#ff9080', '#701818'],
       };
-      const [bc, tc] = colors[tank.kind] || colors.light;
+      const [bc, tc, hc, sc] = colors[tank.kind] || colors.light;
       bodyColor = bc;
       trackColor = tc;
+      highlightColor = hc;
+      shadowColor = sc;
 
       if (tank.hasPowerUp && Math.floor(Date.now() / 150) % 2 === 0) {
         bodyColor = '#ff0000';
         trackColor = '#8b0000';
+        highlightColor = '#ff6060';
+        shadowColor = '#500000';
       }
 
       if (tank.kind === 'heavy') {
-        const hpColors = ['#ff6347', '#ffd700', '#9acd32', '#ffffff'];
+        const hpColors = [
+          ['#ff6347', '#a52a2a', '#ff9080', '#701818'],
+          ['#ffd700', '#b8860b', '#ffec80', '#705000'],
+          ['#9acd32', '#556b2f', '#c0e860', '#304010'],
+          ['#ffffff', '#c0c0c0', '#ffffff', '#808080'],
+        ];
         const idx = Math.min(tank.hp - 1, hpColors.length - 1);
-        bodyColor = hpColors[Math.max(0, idx)];
+        const [bc, tc, hc, sc] = hpColors[Math.max(0, idx)];
+        bodyColor = bc;
+        trackColor = tc;
+        highlightColor = hc;
+        shadowColor = sc;
       }
     }
 
-    ctx.fillStyle = trackColor;
+    // 履带（带渐变）
+    const trackGrad = ctx.createLinearGradient(-size / 2, 0, size / 2, 0);
+    trackGrad.addColorStop(0, shadowColor);
+    trackGrad.addColorStop(0.5, trackColor);
+    trackGrad.addColorStop(1, shadowColor);
+    ctx.fillStyle = trackGrad;
     ctx.fillRect(-size / 2, -size / 2, size * 0.2, size);
     ctx.fillRect(size / 2 - size * 0.2, -size / 2, size * 0.2, size);
-    ctx.fillStyle = '#000';
+
+    // 履带纹理
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     for (let i = 0; i < 6; i++) {
       const ty = -size / 2 + i * (size / 6) + 2;
       ctx.fillRect(-size / 2 + 2, ty, size * 0.2 - 4, 2);
       ctx.fillRect(size / 2 - size * 0.2 + 2, ty, size * 0.2 - 4, 2);
     }
 
-    ctx.fillStyle = bodyColor;
+    // 车身渐变（上亮下暗）
+    const bodyGrad = ctx.createLinearGradient(0, -size * 0.35, 0, size * 0.35);
+    bodyGrad.addColorStop(0, highlightColor);
+    bodyGrad.addColorStop(0.4, bodyColor);
+    bodyGrad.addColorStop(1, shadowColor);
+    ctx.fillStyle = bodyGrad;
     ctx.fillRect(-size * 0.3, -size * 0.35, size * 0.6, size * 0.7);
 
-    ctx.fillStyle = trackColor;
+    // 车身边缘高光
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(-size * 0.3, -size * 0.35, size * 0.6, 2);
+    ctx.fillRect(-size * 0.3, -size * 0.35, 2, size * 0.7);
+    // 车身边缘阴影
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(-size * 0.3, size * 0.35 - 2, size * 0.6, 2);
+    ctx.fillRect(size * 0.3 - 2, -size * 0.35, 2, size * 0.7);
+
+    // 炮塔（圆形渐变）
+    const turretGrad = ctx.createRadialGradient(-2, -2, 1, 0, 0, size * 0.18);
+    turretGrad.addColorStop(0, highlightColor);
+    turretGrad.addColorStop(0.7, bodyColor);
+    turretGrad.addColorStop(1, shadowColor);
+    ctx.fillStyle = turretGrad;
     ctx.beginPath();
     ctx.arc(0, 0, size * 0.18, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = bodyColor;
+    // 炮管（带高光）
+    const barrelGrad = ctx.createLinearGradient(-size * 0.06, 0, size * 0.06, 0);
+    barrelGrad.addColorStop(0, shadowColor);
+    barrelGrad.addColorStop(0.5, bodyColor);
+    barrelGrad.addColorStop(1, highlightColor);
+    ctx.fillStyle = barrelGrad;
     ctx.fillRect(-size * 0.06, -size / 2, size * 0.12, size * 0.35);
 
     ctx.restore();
@@ -264,11 +388,28 @@ export class Renderer {
   drawBullet(b: Bullet) {
     const { x: ox, y: oy } = this.playfieldOffset;
     const ctx = this.ctx;
+    const bx = b.x + ox;
+    const by = b.y + oy;
     const half = BULLET_SIZE / 2;
+
+    // 子弹发光光晕
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const glowColor = b.ownerIsPlayer ? 'rgba(255, 255, 200, 0.5)' : 'rgba(255, 200, 50, 0.5)';
+    const glow = ctx.createRadialGradient(bx, by, 0, bx, by, BULLET_SIZE * 2);
+    glow.addColorStop(0, glowColor);
+    glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(bx, by, BULLET_SIZE * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 子弹本体
     ctx.fillStyle = b.ownerIsPlayer ? '#fff' : '#ffd700';
-    ctx.fillRect(b.x + ox - half, b.y + oy - half, BULLET_SIZE, BULLET_SIZE);
+    ctx.fillRect(bx - half, by - half, BULLET_SIZE, BULLET_SIZE);
     ctx.fillStyle = '#ff4500';
-    ctx.fillRect(b.x + ox - 1, b.y + oy - 1, 2, 2);
+    ctx.fillRect(bx - 1, by - 1, 2, 2);
   }
 
   drawExplosion(e: Explosion) {
@@ -277,6 +418,21 @@ export class Renderer {
     const cx = e.x + ox;
     const cy = e.y + oy;
     const r = e.radius;
+
+    // 动态光照：用 lighter 模式叠加橙黄色径向渐变，照亮周围
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const lightGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 3);
+    lightGrad.addColorStop(0, `rgba(255, 200, 80, ${0.5 * e.alpha})`);
+    lightGrad.addColorStop(0.3, `rgba(255, 120, 30, ${0.3 * e.alpha})`);
+    lightGrad.addColorStop(1, 'rgba(255, 80, 0, 0)');
+    ctx.fillStyle = lightGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 爆炸本体
     ctx.save();
     ctx.globalAlpha = e.alpha;
     // 外层火焰
@@ -304,6 +460,22 @@ export class Renderer {
     const x = p.x + ox;
     const y = p.y + oy;
     const s = p.w;
+
+    // 阴影
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(x + 2, y + 3, s, s);
+
+    // 发光背景
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = ctx.createRadialGradient(x + s / 2, y + s / 2, 0, x + s / 2, y + s / 2, s);
+    glow.addColorStop(0, 'rgba(255, 255, 100, 0.4)');
+    glow.addColorStop(1, 'rgba(255, 255, 100, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - s / 2, y - s / 2, s * 2, s * 2);
+    ctx.restore();
+
+    // 闪烁背景
     ctx.fillStyle = Math.floor(Date.now() / 100) % 2 === 0 ? '#fff' : '#ff0000';
     ctx.fillRect(x, y, s, s);
     ctx.fillStyle = '#000';

@@ -4,6 +4,12 @@
 
 > 完整的产品功能设计与游戏玩法介绍见 [PRD.md](PRD.md)。
 
+## 游戏截图
+
+| 主菜单 | 游戏中 |
+|:---:|:---:|
+| ![主菜单](screenshots/menu.png) | ![游戏中](screenshots/playing.png) |
+
 ## 工程介绍
 
 ### 技术栈

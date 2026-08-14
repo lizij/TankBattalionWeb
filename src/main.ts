@@ -3,17 +3,31 @@ import { LayoutMode } from './game/Renderer';
 import { TouchControls } from './game/TouchControls';
 import { PLAYFIELD_W, PLAYFIELD_H, SIDEBAR_W } from './game/constants';
 
+// 重置 body 样式，防止默认 margin 导致溢出
+document.body.style.margin = '0';
+document.body.style.padding = '0';
+document.body.style.overflow = 'hidden';
+document.body.style.background = '#000';
+
 const app = document.getElementById('app')!;
+app.style.width = '100%';
+app.style.height = '100vh';
+app.style.display = 'flex';
+app.style.alignItems = 'center';
+app.style.justifyContent = 'center';
 
 // 检测布局模式：竖屏为 mobile，横屏为 desktop
 function detectLayout(): LayoutMode {
-  return window.innerHeight > window.innerWidth ? 'mobile' : 'desktop';
+  return document.documentElement.clientHeight > document.documentElement.clientWidth ? 'mobile' : 'desktop';
 }
 
 let layout = detectLayout();
 let canvas = createCanvas(layout);
 let game = new Game(canvas, layout);
 let touchControls: TouchControls | null = null;
+
+// 触屏控件占用的底部高度（用于移动端缩放计算）
+const MOBILE_CONTROLS_H = 180;
 
 function createCanvas(l: LayoutMode): HTMLCanvasElement {
   const c = document.createElement('canvas');
@@ -32,9 +46,15 @@ function createCanvas(l: LayoutMode): HTMLCanvasElement {
 }
 
 function resize() {
+  let availW = document.documentElement.clientWidth;
+  let availH = document.documentElement.clientHeight;
+  // 移动端需要为底部虚拟按键留出空间
+  if (layout === 'mobile') {
+    availH -= MOBILE_CONTROLS_H;
+  }
   const scale = Math.min(
-    window.innerWidth / canvas.width,
-    window.innerHeight / canvas.height,
+    availW / canvas.width,
+    availH / canvas.height,
     layout === 'mobile' ? 1.2 : 1.5
   );
   canvas.style.width = `${canvas.width * scale}px`;
@@ -50,13 +70,17 @@ function setupLayout() {
     canvas = createCanvas(layout);
     app.appendChild(canvas);
     game = new Game(canvas, layout);
-    if (touchControls) {
-      touchControls.hide();
-    }
-    if (layout === 'mobile') {
-      touchControls = new TouchControls(game.getInput(), document.body);
-    }
     nameInputVisible = false; // 重置，让输入框重新定位
+  }
+  // 移动端每次 resize 都重建触屏控件以适配屏幕尺寸
+  if (layout === 'mobile') {
+    if (touchControls) {
+      touchControls.destroy();
+    }
+    touchControls = new TouchControls(game.getInput(), document.body);
+  } else if (touchControls) {
+    touchControls.destroy();
+    touchControls = null;
   }
   resize();
 }

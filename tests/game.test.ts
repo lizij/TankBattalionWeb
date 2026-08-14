@@ -29,6 +29,7 @@ try {
 
 // Mock canvas 2D context
 function createMockCanvas(): HTMLCanvasElement {
+  const mockGradient = { addColorStop: vi.fn() };
   const ctx = {
     fillRect: vi.fn(),
     clearRect: vi.fn(),
@@ -44,12 +45,16 @@ function createMockCanvas(): HTMLCanvasElement {
     restore: vi.fn(),
     translate: vi.fn(),
     rotate: vi.fn(),
+    createLinearGradient: vi.fn(() => mockGradient),
+    createRadialGradient: vi.fn(() => mockGradient),
     fillStyle: '',
     strokeStyle: '',
     font: '',
     textAlign: '',
     textBaseline: '',
     lineWidth: 0,
+    globalAlpha: 1,
+    globalCompositeOperation: '',
   } as unknown as CanvasRenderingContext2D;
 
   return {

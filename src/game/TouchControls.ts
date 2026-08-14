@@ -14,6 +14,12 @@ export class TouchControls {
   constructor(input: InputManager, parent: HTMLElement) {
     this.input = input;
 
+    // 根据屏幕尺寸计算控件大小
+    const minDim = Math.min(window.innerWidth, window.innerHeight);
+    const dpadSize = Math.min(150, Math.max(110, minDim * 0.38));
+    const btnSize = Math.min(90, Math.max(64, minDim * 0.22));
+    const fontSize = Math.min(20, Math.max(14, minDim * 0.05));
+
     this.container = document.createElement('div');
     this.container.id = 'touch-controls';
     this.container.style.cssText = `
@@ -28,27 +34,27 @@ export class TouchControls {
     this.dpad = document.createElement('div');
     this.dpad.style.cssText = `
       position: absolute;
-      left: 20px;
-      bottom: 20px;
-      width: 150px;
-      height: 150px;
+      left: 16px;
+      bottom: 16px;
+      width: ${dpadSize}px;
+      height: ${dpadSize}px;
       pointer-events: auto;
     `;
-    this.buildDpad();
+    this.buildDpad(dpadSize);
 
     // 射击键（右下）
     this.shootBtn = document.createElement('div');
     this.shootBtn.textContent = '射击';
     this.shootBtn.style.cssText = `
       position: absolute;
-      right: 30px;
-      bottom: 40px;
-      width: 90px;
-      height: 90px;
+      right: 24px;
+      bottom: 32px;
+      width: ${btnSize}px;
+      height: ${btnSize}px;
       border-radius: 50%;
       background: rgba(255, 80, 80, 0.6);
       color: #fff;
-      font-size: 20px;
+      font-size: ${fontSize}px;
       font-weight: bold;
       display: flex;
       align-items: center;
@@ -65,14 +71,14 @@ export class TouchControls {
     this.pauseBtn.textContent = 'II';
     this.pauseBtn.style.cssText = `
       position: absolute;
-      right: 20px;
-      top: 20px;
-      width: 50px;
-      height: 50px;
+      right: 16px;
+      top: 16px;
+      width: ${Math.min(50, btnSize * 0.6)}px;
+      height: ${Math.min(50, btnSize * 0.6)}px;
       border-radius: 50%;
       background: rgba(255,255,255,0.3);
       color: #fff;
-      font-size: 18px;
+      font-size: ${fontSize * 0.8}px;
       font-weight: bold;
       display: flex;
       align-items: center;
@@ -94,12 +100,13 @@ export class TouchControls {
     }
   }
 
-  private buildDpad() {
+  private buildDpad(dpadSize: number) {
+    const unit = dpadSize / 3;
     const dirs: { dir: 'up' | 'down' | 'left' | 'right'; style: string }[] = [
-      { dir: 'up', style: 'left:50px; top:0; width:50px; height:50px;' },
-      { dir: 'down', style: 'left:50px; top:100px; width:50px; height:50px;' },
-      { dir: 'left', style: 'left:0; top:50px; width:50px; height:50px;' },
-      { dir: 'right', style: 'left:100px; top:50px; width:50px; height:50px;' },
+      { dir: 'up', style: `left:${unit}px; top:0; width:${unit}px; height:${unit}px;` },
+      { dir: 'down', style: `left:${unit}px; top:${unit * 2}px; width:${unit}px; height:${unit}px;` },
+      { dir: 'left', style: `left:0; top:${unit}px; width:${unit}px; height:${unit}px;` },
+      { dir: 'right', style: `left:${unit * 2}px; top:${unit}px; width:${unit}px; height:${unit}px;` },
     ];
 
     for (const { dir, style } of dirs) {
@@ -114,7 +121,7 @@ export class TouchControls {
         align-items: center;
         justify-content: center;
         color: #fff;
-        font-size: 22px;
+        font-size: ${unit * 0.4}px;
         user-select: none;
         touch-action: none;
       `;
@@ -181,5 +188,9 @@ export class TouchControls {
 
   hide() {
     this.container.style.display = 'none';
+  }
+
+  destroy() {
+    this.container.remove();
   }
 }
