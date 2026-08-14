@@ -137,6 +137,12 @@ export class Game {
     this.updateExplosions();
     this.updateSpawn();
 
+    // 清理死亡的敌人、子弹、爆炸和过期道具
+    this.enemies = this.enemies.filter(e => e.alive);
+    this.bullets = this.bullets.filter(b => b.alive);
+    this.explosions = this.explosions.filter(e => e.alive);
+    this.powerUps = this.powerUps.filter(p => p.alive);
+
     if (this.freezeTimer > 0) {
       this.freezeTimer--;
       if (this.freezeTimer === 0) {
@@ -310,8 +316,11 @@ export class Game {
             e.alive = false;
             this.score += SCORE[e.kind] || 0;
             this.enemiesKilled++;
+            this.explosions.push(new Explosion(e.x + TANK_SIZE / 2, e.y + TANK_SIZE / 2));
+            if (e.hasPowerUp) this.spawnPowerUp();
           }
         }
+        this.audio.playExplosion();
         break;
       case PowerUpType.Clock:
         this.freezeTimer = Math.floor(POWERUP_DURATION.clock / (1000 / 60));
@@ -430,6 +439,14 @@ export class Game {
     } else {
       setTimeout(() => {
         if (this.status !== 'gameover' && this.status !== 'levelclear') {
+          // 将出生点附近的敌人推开，避免重叠
+          const spawnRect = { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y, w: TANK_SIZE, h: TANK_SIZE };
+          for (const e of this.enemies) {
+            if (e.alive && rectsOverlap(spawnRect, e.rect)) {
+              // 将敌人移到旁边
+              e.x = Math.max(0, PLAYER_SPAWN.x - TANK_SIZE - 8);
+            }
+          }
           this.player.reset(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
         }
       }, 1000);

@@ -113,8 +113,8 @@ export class EnemyTank extends Tank {
   }
 
   private chooseTarget(player: Tank | null): { x: number; y: number } {
-    // 70% 朝玩家，30% 朝基地
-    if (player && Math.random() < 0.7) {
+    // 70% 朝玩家（仅当玩家存活时），30% 朝基地
+    if (player && player.alive && Math.random() < 0.7) {
       return { x: player.x + player.w / 2, y: player.y + player.h / 2 };
     }
     // 基地位置（底部中央，老鹰 2x2 的中心）

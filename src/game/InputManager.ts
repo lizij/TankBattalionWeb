@@ -38,6 +38,13 @@ export class InputManager {
     window.addEventListener('gamepaddisconnected', () => {
       this.gamepadIndex = null;
     });
+
+    // 窗口失焦时清除所有按键状态，防止按键卡住
+    window.addEventListener('blur', () => {
+      this.keys.clear();
+      this.prevShoot = false;
+      this.prevPause = false;
+    });
   }
 
   // 虚拟按键接口（供触屏控件调用）

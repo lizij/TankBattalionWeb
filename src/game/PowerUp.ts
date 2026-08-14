@@ -10,6 +10,8 @@ export class PowerUp {
   alive = true;
   // 闪烁动画
   blinkTimer = 0;
+  // 存在时间（帧），约 18 秒后消失
+  life = 60 * 18;
 
   constructor(x: number, y: number, type: PowerUpType) {
     this.id = nextId();
@@ -27,10 +29,18 @@ export class PowerUp {
 
   update() {
     this.blinkTimer++;
+    this.life--;
+    if (this.life <= 0) {
+      this.alive = false;
+    }
   }
 
   get visible(): boolean {
-    // 闪烁效果
+    // 最后 3 秒快速闪烁
+    if (this.life < 180) {
+      return Math.floor(this.blinkTimer / 5) % 2 === 0;
+    }
+    // 正常闪烁
     return Math.floor(this.blinkTimer / 10) % 2 === 0;
   }
 }

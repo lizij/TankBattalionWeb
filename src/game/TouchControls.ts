@@ -10,6 +10,8 @@ export class TouchControls {
 
   // 当前按下的方向
   private activeDir: 'up' | 'down' | 'left' | 'right' | null = null;
+  // 防止触屏后鼠标事件重复触发
+  private touchHandled = false;
 
   constructor(input: InputManager, parent: HTMLElement) {
     this.input = input;
@@ -130,12 +132,16 @@ export class TouchControls {
 
       const press = (e: Event) => {
         e.preventDefault();
+        if (e.type === 'touchstart') this.touchHandled = true;
+        if (e.type === 'mousedown' && this.touchHandled) return;
         this.activeDir = dir;
         this.input.setTouch(dir, true);
         btn.style.background = 'rgba(255,255,255,0.5)';
       };
       const release = (e: Event) => {
         e.preventDefault();
+        if (e.type === 'touchend') this.touchHandled = false;
+        if (e.type === 'mouseup' && this.touchHandled) return;
         if (this.activeDir === dir) this.activeDir = null;
         this.input.setTouch(dir, false);
         btn.style.background = 'rgba(255,255,255,0.25)';
@@ -155,11 +161,15 @@ export class TouchControls {
   private bindShoot() {
     const press = (e: Event) => {
       e.preventDefault();
+      if (e.type === 'touchstart') this.touchHandled = true;
+      if (e.type === 'mousedown' && this.touchHandled) return;
       this.input.setTouch('shoot', true);
       this.shootBtn.style.background = 'rgba(255, 80, 80, 0.9)';
     };
     const release = (e: Event) => {
       e.preventDefault();
+      if (e.type === 'touchend') this.touchHandled = false;
+      if (e.type === 'mouseup' && this.touchHandled) return;
       this.input.setTouch('shoot', false);
       this.shootBtn.style.background = 'rgba(255, 80, 80, 0.6)';
     };
@@ -174,6 +184,8 @@ export class TouchControls {
   private bindPause() {
     const press = (e: Event) => {
       e.preventDefault();
+      if (e.type === 'touchstart') this.touchHandled = true;
+      if (e.type === 'mousedown' && this.touchHandled) return;
       // 模拟 P 键按下
       this.input['keys'].add('p');
       setTimeout(() => this.input['keys'].delete('p'), 50);

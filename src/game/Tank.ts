@@ -45,16 +45,23 @@ export abstract class Tank {
     const { dx, dy } = dirVector(dir);
 
     // 对齐到网格（便于转弯）：在垂直于移动方向上对齐到 TILE_SIZE/2 的倍数
+    // 对齐前检查是否会撞墙，如果会则放弃对齐
     if (dx !== 0) {
       // 水平移动，对齐 y
       const half = TILE_SIZE / 2;
       const alignedY = Math.round(this.y / half) * half;
-      this.y = alignedY;
+      const testRect = { x: this.x, y: alignedY, w: this.w, h: this.h };
+      if (!this.collidesWithMap(testRect, map) && !this.collidesWithTanks(testRect, others)) {
+        this.y = alignedY;
+      }
     } else {
       // 垂直移动，对齐 x
       const half = TILE_SIZE / 2;
       const alignedX = Math.round(this.x / half) * half;
-      this.x = alignedX;
+      const testRect = { x: alignedX, y: this.y, w: this.w, h: this.h };
+      if (!this.collidesWithMap(testRect, map) && !this.collidesWithTanks(testRect, others)) {
+        this.x = alignedX;
+      }
     }
 
     const nx = this.x + dx * this.speed;
@@ -83,6 +90,15 @@ export abstract class Tank {
     this.y = ny;
     this.moving = true;
     return true;
+  }
+
+  // 检测矩形是否与其他坦克碰撞
+  private collidesWithTanks(rect: { x: number; y: number; w: number; h: number }, others: Tank[]): boolean {
+    for (const o of others) {
+      if (o === this || !o.alive) continue;
+      if (rectsOverlap(rect, o.rect)) return true;
+    }
+    return false;
   }
 
   // 检测矩形是否与不可通行地形碰撞

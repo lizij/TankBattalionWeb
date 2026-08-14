@@ -75,8 +75,8 @@ export class PlayerTank extends Tank {
 
   // 玩家被击中：有护盾则免疫，否则失去一条命
   hit(): boolean {
-    if (this.hasShield) return false;
-    this.lives--;
+    if (this.hasShield || !this.alive) return false;
+    this.lives = Math.max(0, this.lives - 1);
     this.alive = false;
     return true;
   }
