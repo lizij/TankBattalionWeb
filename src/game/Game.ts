@@ -137,7 +137,13 @@ export class Game {
     this.updateExplosions();
     this.updateSpawn();
 
-    if (this.freezeTimer > 0) this.freezeTimer--;
+    if (this.freezeTimer > 0) {
+      this.freezeTimer--;
+      if (this.freezeTimer === 0) {
+        // 冻结结束，立即解除所有敌人的冻结状态
+        for (const e of this.enemies) e.frozenTimer = 0;
+      }
+    }
     if (this.shovelTimer > 0) {
       this.shovelTimer--;
       if (this.shovelTimer === 0) this.restoreBaseWalls();
@@ -179,10 +185,10 @@ export class Game {
         e.frozenTimer = Math.max(e.frozenTimer, 2);
       }
 
-      e.aiDecide(this.map, this.player, others);
+      const { shoot } = e.aiDecide(this.map, this.player, others);
 
-      // 射击：由 shootCooldown 控制频率，加入随机性
-      if (e.shootCooldown <= 0 && Math.random() < 0.03) {
+      // 射击：使用 AI 决策结果
+      if (shoot) {
         const b = e.shoot();
         if (b) this.bullets.push(b);
       }
@@ -250,25 +256,24 @@ export class Game {
     const r0 = Math.floor(rect.y / TILE_SIZE);
     const r1 = Math.floor((rect.y + rect.h - 1) / TILE_SIZE);
 
-    let hit = false;
     for (let r = r0; r <= r1; r++) {
       for (let c = c0; c <= c1; c++) {
         if (r < 0 || r >= MAP_ROWS || c < 0 || c >= MAP_COLS) continue;
         const t = this.map[r][c];
         if (t === TileType.Brick) {
           this.map[r][c] = TileType.Empty;
-          hit = true;
+          return true;
         } else if (t === TileType.Steel) {
           if (b.power >= 1) this.map[r][c] = TileType.Empty;
-          hit = true;
+          return true;
         } else if (t === TileType.Eagle) {
           this.map[r][c] = TileType.Empty;
-          hit = true;
           this.eagleDestroyed();
+          return true;
         }
       }
     }
-    return hit;
+    return false;
   }
 
   private updatePowerUps() {
@@ -365,8 +370,28 @@ export class Game {
   private spawnPowerUp() {
     const types = Object.values(PowerUpType);
     const type = pickRandom(types);
-    const x = randInt(1, MAP_COLS - 3) * TILE_SIZE;
-    const y = randInt(1, MAP_ROWS - 3) * TILE_SIZE;
+    const size = TILE_SIZE * 2; // 道具占 2x2 格
+    let x = 0, y = 0;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      x = randInt(1, MAP_COLS - 3) * TILE_SIZE;
+      y = randInt(1, MAP_ROWS - 3) * TILE_SIZE;
+      // 检查道具覆盖的所有格子是否可通行
+      const c0 = Math.floor(x / TILE_SIZE);
+      const r0 = Math.floor(y / TILE_SIZE);
+      const c1 = Math.floor((x + size - 1) / TILE_SIZE);
+      const r1 = Math.floor((y + size - 1) / TILE_SIZE);
+      let ok = true;
+      for (let r = r0; r <= r1 && ok; r++) {
+        for (let c = c0; c <= c1; c++) {
+          const t = this.map[r]?.[c];
+          if (t !== TileType.Empty && t !== TileType.Trees && t !== TileType.Ice) {
+            ok = false;
+            break;
+          }
+        }
+      }
+      if (ok) break;
+    }
     this.powerUps.push(new PowerUp(x, y, type));
   }
 
@@ -404,7 +429,7 @@ export class Game {
       this.endGame();
     } else {
       setTimeout(() => {
-        if (this.status !== 'gameover') {
+        if (this.status !== 'gameover' && this.status !== 'levelclear') {
           this.player.reset(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
         }
       }, 1000);

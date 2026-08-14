@@ -2,7 +2,7 @@
 
 export const TILE_SIZE = 16;          // 每个格子像素大小
 export const MAP_COLS = 26;           // 地图列数（画布 416 / 16 = 26）
-export const MAP_ROWS = 26;           // 地图行数（画布 416 / 16 = 16）
+export const MAP_ROWS = 26;           // 地图行数（画布 416 / 16 = 26）
 export const PLAYFIELD_W = TILE_SIZE * MAP_COLS; // 416
 export const PLAYFIELD_H = TILE_SIZE * MAP_ROWS; // 416
 

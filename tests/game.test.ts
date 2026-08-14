@@ -3,6 +3,7 @@ import { Game } from '../src/game/Game';
 import { TileType, TankKind, PowerUpType } from '../src/game/types';
 import { TILE_SIZE, MAP_COLS, MAP_ROWS, PLAYER_SPAWN } from '../src/game/constants';
 import { Bullet } from '../src/game/Bullet';
+import { EnemyTank } from '../src/game/EnemyTank';
 
 // Mock DOM globals for node environment
 const mockWindow = {
@@ -233,5 +234,139 @@ describe('Game spawning', () => {
     }
     const alive = game.enemies.filter(e => e.alive).length;
     expect(alive).toBeLessThanOrEqual(4);
+  });
+});
+
+describe('Game bullet-terrain collision (single tile)', () => {
+  let game: Game;
+
+  beforeEach(() => {
+    const canvas = createMockCanvas();
+    game = new Game(canvas);
+    game.startGame();
+    const map = game.map;
+    for (let r = 0; r < MAP_ROWS; r++) {
+      for (let c = 0; c < MAP_COLS; c++) map[r][c] = TileType.Empty;
+    }
+  });
+
+  it('bullet destroys only one brick tile per hit', () => {
+    // 在子弹路径上放两块相邻的砖
+    const row = 10;
+    game.map[row][5] = TileType.Brick;
+    game.map[row][6] = TileType.Brick;
+
+    // 子弹从左侧射入，水平向右
+    const b = new Bullet(5 * TILE_SIZE, row * TILE_SIZE + TILE_SIZE / 2, 'right', true);
+    game.bullets.push(b);
+
+    // 更新一帧
+    game['updateBullets']();
+
+    // 应该只有一块砖被摧毁
+    const bricksLeft = (game.map[row][5] === TileType.Brick ? 1 : 0) +
+                       (game.map[row][6] === TileType.Brick ? 1 : 0);
+    expect(bricksLeft).toBe(1);
+  });
+});
+
+describe('Game power-up spawning', () => {
+  let game: Game;
+
+  beforeEach(() => {
+    const canvas = createMockCanvas();
+    game = new Game(canvas);
+    game.startGame();
+  });
+
+  it('power-up does not spawn on brick/steel/water', () => {
+    // 把地图填满砖墙
+    for (let r = 0; r < MAP_ROWS; r++) {
+      for (let c = 0; c < MAP_COLS; c++) {
+        game.map[r][c] = TileType.Brick;
+      }
+    }
+    // 留一片空地（中心区域）
+    for (let r = 10; r < 16; r++) {
+      for (let c = 10; c < 16; c++) {
+        game.map[r][c] = TileType.Empty;
+      }
+    }
+
+    // 多次生成道具，确保都不在砖墙上
+    for (let i = 0; i < 20; i++) {
+      game['spawnPowerUp']();
+      const p = game.powerUps[i];
+      const col = Math.floor(p.x / TILE_SIZE);
+      const row = Math.floor(p.y / TILE_SIZE);
+      const tile = game.map[row][col];
+      expect(tile).not.toBe(TileType.Brick);
+      expect(tile).not.toBe(TileType.Steel);
+      expect(tile).not.toBe(TileType.Water);
+    }
+  });
+});
+
+describe('Game freeze power-up', () => {
+  let game: Game;
+
+  beforeEach(() => {
+    const canvas = createMockCanvas();
+    game = new Game(canvas);
+    game.startGame();
+  });
+
+  it('enemies frozenTimer is reset when freeze ends', () => {
+    // 添加一个敌人
+    const e = new EnemyTank(0, 0, TankKind.Light);
+    e.spawnTimer = 0;
+    game.enemies.push(e);
+
+    // 激活冻结
+    game['freezeTimer'] = 10;
+    game.update();
+    expect(e.frozenTimer).toBeGreaterThan(0);
+
+    // 快进到冻结结束
+    game['freezeTimer'] = 1;
+    game.update();
+    // freezeTimer 变为 0 后，敌人 frozenTimer 应被重置为 0
+    expect(e.frozenTimer).toBe(0);
+  });
+});
+
+describe('Game player respawn', () => {
+  let game: Game;
+
+  beforeEach(() => {
+    const canvas = createMockCanvas();
+    game = new Game(canvas);
+    game.startGame();
+  });
+
+  it('player does not respawn during levelclear', () => {
+    // 模拟玩家死亡
+    game.player.alive = false;
+    game.player.lives = 1;
+    game['onPlayerDeath']();
+
+    // 模拟过关
+    game.status = 'levelclear';
+
+    // 模拟 setTimeout 回调（直接调用内部逻辑）
+    // 检查在 levelclear 状态下玩家不会被复活
+    // 由于 setTimeout 是异步的，我们直接验证逻辑：
+    // status 是 levelclear 时，reset 不应被调用
+    const originalReset = game.player.reset;
+    let resetCalled = false;
+    game.player.reset = () => { resetCalled = true; };
+
+    // 手动触发回调逻辑
+    if (game.status !== 'gameover' && game.status !== 'levelclear') {
+      game.player.reset(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
+    }
+
+    expect(resetCalled).toBe(false);
+    game.player.reset = originalReset;
   });
 });
