@@ -13,8 +13,9 @@ const app = document.getElementById('app')!;
 app.style.width = '100%';
 app.style.height = '100vh';
 app.style.display = 'flex';
-app.style.alignItems = 'center';
+app.style.alignItems = 'flex-start'; // 移动端靠上对齐，避免被虚拟按键遮挡
 app.style.justifyContent = 'center';
+app.style.paddingTop = '0';
 
 // 检测布局模式：竖屏为 mobile，横屏为 desktop
 function detectLayout(): LayoutMode {
@@ -51,6 +52,9 @@ function resize() {
   // 移动端需要为底部虚拟按键留出空间
   if (layout === 'mobile') {
     availH -= MOBILE_CONTROLS_H;
+    app.style.alignItems = 'flex-start'; // 靠上对齐，避免被虚拟按键遮挡
+  } else {
+    app.style.alignItems = 'center';
   }
   const scale = Math.min(
     availW / canvas.width,
