@@ -59,6 +59,7 @@ export class Game {
     this.input = new InputManager();
     this.player = new PlayerTank(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
     this.leaderboard = new Leaderboard();
+    this.map = getLevelMap(0); // 预加载第一关地图，避免菜单渲染时 map 为空
   }
 
   // 暴露 input 供触屏控件使用
